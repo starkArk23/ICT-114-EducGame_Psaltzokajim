@@ -21,7 +21,7 @@ public class PlayerInteraction : MonoBehaviour
             interactableLayer
         );
 
-        DialogueManager dm = FindObjectOfType<DialogueManager>();
+        DialogueManager dm = FindFirstObjectByType<DialogueManager>();
 
 if (dm != null)
 {

@@ -54,7 +54,7 @@ public class RandomEncounterZone : MonoBehaviour
         if (Time.time < lastEncounterTime + cooldownSeconds)
             return;
 
-        if (!PlayerMovement.CanMove || playerRb.linearVelocity.sqrMagnitude < 0.01f)
+        if (!GameState.CanPlayerMove || playerRb.linearVelocity.sqrMagnitude < 0.01f)
         {
             lastPlayerPosition = playerRb.position;
             return;

@@ -46,9 +46,8 @@ public class EventManager : MonoBehaviour
         Debug.Log($"[EventManager] StartEvent: {data.eventId}");
 
         GameState.CanPlayerMove = false;
-        PlayerMovement.AddMovementLock("Event");
 
-        DialogueManager dm = FindObjectOfType<DialogueManager>();
+        DialogueManager dm = FindFirstObjectByType<DialogueManager>();
         if (dm == null)
         {
             Debug.LogError("[EventManager] No DialogueManager found in scene.");
@@ -123,7 +122,6 @@ public class EventManager : MonoBehaviour
         currentEvent = null;
 
         GameState.CanPlayerMove = true;
-        PlayerMovement.RemoveMovementLock("Event");
     }
 
     private bool CanStartEvent(CyberEventData data)
