@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
@@ -5,6 +6,7 @@ public class DialogueManager : MonoBehaviour
 {
     [Header("UI")]
     public GameObject dialoguePanel;
+    public TMP_Text titleText;
     public TMP_Text dialogueText;
     public Button choiceAButton;
     public Button choiceBButton;
@@ -27,6 +29,7 @@ public class DialogueManager : MonoBehaviour
             return;
         }
 
+        PlayerMovement.AddMovementLock("Dialogue");
         dialoguePanel.SetActive(true);
 
         // Keep your earlier panel-fix safety
@@ -78,6 +81,7 @@ public class DialogueManager : MonoBehaviour
         btn.onClick.AddListener(() =>
         {
             dialoguePanel.SetActive(false);
+            PlayerMovement.RemoveMovementLock("Dialogue");
 
             // For now: log the "effect" + feedback
             Debug.Log($"Picked: {choice.choiceText}");
@@ -101,9 +105,68 @@ choiceLogUI.Show($"<color={color}>{type}:</color> \"{choice.feedbackText}\"  <b>
     {
         if (btn != null) btn.gameObject.SetActive(active);
     }
+    public void Show(string title, string body, string[] choices, Action<int> onChoiceSelected)
+    {
+        if (dialoguePanel == null || dialogueText == null)
+        {
+            Debug.LogError("Show: dialoguePanel or dialogueText is NULL");
+            return;
+        }
+
+        dialoguePanel.SetActive(true);
+
+        var cg = dialoguePanel.GetComponent<CanvasGroup>();
+        if (cg != null) cg.alpha = 1f;
+
+        var rt = dialoguePanel.GetComponent<RectTransform>();
+        if (rt != null) rt.anchoredPosition = Vector2.zero;
+
+        if (titleText != null)
+            titleText.text = title;
+
+        if (titleText == null && !string.IsNullOrEmpty(title))
+            dialogueText.text = title + "\n\n" + body;
+        else
+            dialogueText.text = body;
+
+        ClearButton(choiceAButton);
+        ClearButton(choiceBButton);
+        ClearButton(choiceCButton);
+        ClearButton(choiceDButton);
+
+        SetButtonActive(choiceAButton, false);
+        SetButtonActive(choiceBButton, false);
+        SetButtonActive(choiceCButton, false);
+        SetButtonActive(choiceDButton, false);
+
+        int count = choices != null ? Mathf.Min(choices.Length, 4) : 0;
+        if (count >= 1) SetupChoiceButton(choiceAButton, choices[0], 0, onChoiceSelected);
+        if (count >= 2) SetupChoiceButton(choiceBButton, choices[1], 1, onChoiceSelected);
+        if (count >= 3) SetupChoiceButton(choiceCButton, choices[2], 2, onChoiceSelected);
+        if (count >= 4) SetupChoiceButton(choiceDButton, choices[3], 3, onChoiceSelected);
+    }
+
+    private void SetupChoiceButton(Button btn, string label, int index, Action<int> onChoiceSelected)
+    {
+        if (btn == null)
+            return;
+
+        SetButtonActive(btn, true);
+
+        var tmp = btn.GetComponentInChildren<TMP_Text>();
+        if (tmp != null)
+            tmp.text = label;
+
+        btn.onClick.AddListener(() =>
+        {
+            dialoguePanel.SetActive(false);
+            onChoiceSelected?.Invoke(index);
+        });
+    }
     public void ShowDialogue(string text, string choiceAText, string choiceBText,
     System.Action onChoiceA, System.Action onChoiceB)
 {
+    PlayerMovement.AddMovementLock("Dialogue");
     dialoguePanel.SetActive(true);
 
     var cg = dialoguePanel.GetComponent<CanvasGroup>();
@@ -130,12 +193,14 @@ choiceLogUI.Show($"<color={color}>{type}:</color> \"{choice.feedbackText}\"  <b>
     choiceAButton.onClick.AddListener(() =>
     {
         dialoguePanel.SetActive(false);
+        PlayerMovement.RemoveMovementLock("Dialogue");
         onChoiceA?.Invoke();
     });
 
     choiceBButton.onClick.AddListener(() =>
     {
         dialoguePanel.SetActive(false);
+        PlayerMovement.RemoveMovementLock("Dialogue");
         onChoiceB?.Invoke();
     });
 }

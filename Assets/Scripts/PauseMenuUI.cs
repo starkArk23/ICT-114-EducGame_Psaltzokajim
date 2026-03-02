@@ -18,6 +18,7 @@ public class PauseMenu : MonoBehaviour
 
         Time.timeScale = 1f;
         isPaused = false;
+        PlayerMovement.RemoveMovementLock("Pause");
     }
 
     private void Update()
@@ -40,6 +41,7 @@ public class PauseMenu : MonoBehaviour
 
         Time.timeScale = 1f;
         isPaused = false;
+        PlayerMovement.RemoveMovementLock("Pause");
     }
 
     public void GoToMainMenu()
@@ -60,5 +62,6 @@ public class PauseMenu : MonoBehaviour
 
         Time.timeScale = 0f;
         isPaused = true;
+        PlayerMovement.AddMovementLock("Pause");
     }
 }

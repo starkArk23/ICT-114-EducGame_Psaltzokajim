@@ -20,19 +20,19 @@ public class PlayerInteraction : MonoBehaviour
             interactionRadius,
             interactableLayer
         );
+        if (hit == null)
+            return;
 
-        DialogueManager dm = FindFirstObjectByType<DialogueManager>();
+        IInteractable interactable = hit.GetComponent<IInteractable>();
+        if (interactable == null)
+            interactable = hit.GetComponentInParent<IInteractable>();
+        if (interactable == null)
+            interactable = hit.GetComponentInChildren<IInteractable>();
 
-if (dm != null)
-{
-    dm.ShowDialogue(
-        "You received a suspicious email asking for your password.",
-        "Ignore it",
-        "Click the link",
-        () => Debug.Log("Good choice"),
-        () => Debug.Log("Bad choice")
-    );
-}
+        if (interactable != null)
+            interactable.Interact();
+        else
+            Debug.Log("[PlayerInteraction] No IInteractable found on target.");
     }
 
     private void OnDrawGizmosSelected()
