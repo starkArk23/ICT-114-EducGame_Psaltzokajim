@@ -1,0 +1,275 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ThreatType {
+  PHISHING
+  MALWARE
+  SOCIAL_ENGINEERING
+  PASSWORD_ATTACK
+  DATA_BREACH
+  RANSOMWARE
+  SCAM
+  UNSAFE_DOWNLOAD
+}
+
+enum DifficultyLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum EncounterType {
+  RANDOM_ENCOUNTER
+  ZONE_SPECIFIC
+  SCRIPTED
+}
+
+enum AttemptOutcome {
+  SUCCESS
+  FAILURE
+}
+
+enum LedgerEntryReason {
+  CHOICE_OUTCOME
+  SAVE_LOAD
+  REPORT_GENERATED
+  ADMIN_ADJUSTMENT
+}
+
+enum ReportType {
+  SESSION_SUMMARY
+  LEARNING_OUTCOME
+  SECURITY_ASSESSMENT
+}
+
+enum AuditActorRole {
+  PLAYER
+  ADMIN
+  SYSTEM
+}
+
+model Player {
+  id                 String             @id @default(cuid())
+  operatorName       String             @unique
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  saveSlots          SaveSlot[]
+  attempts           ScenarioAttempt[]
+  trustTokenEntries  TrustTokenLedger[]
+  cyberStatusEntries CyberStatusLedger[]
+  progressSummaries  ProgressSummary[]
+  reports            SecurityReport[]
+  auditLogs          AuditLog[]
+
+  @@index([operatorName])
+}
+
+model SaveSlot {
+  id                  String              @id @default(cuid())
+  playerId            String
+  player              Player              @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  slotNumber          Int
+  slotName            String?
+  currentScenarioId   String?
+  currentScenario     ThreatScenario?     @relation(fields: [currentScenarioId], references: [id], onDelete: SetNull)
+  currentScene        String?
+  currentLocation     String?
+  currentCyberStatus  Int                 @default(50)
+  currentTrustTokens  Int                 @default(0)
+  unlockedFlags       Json                @default("[]")
+  sessionState        Json                @default("{}")
+  totalAttempts       Int                 @default(0)
+  successfulAttempts  Int                 @default(0)
+  lastPlayedAt        DateTime            @updatedAt
+  completedAt         DateTime?
+  createdAt           DateTime            @default(now())
+  attempts            ScenarioAttempt[]
+  trustTokenEntries   TrustTokenLedger[]
+  cyberStatusEntries  CyberStatusLedger[]
+  progressSummary     ProgressSummary?
+  reports             SecurityReport[]
+  auditLogs           AuditLog[]
+
+  @@unique([playerId, slotNumber])
+  @@index([playerId, slotNumber])
+  @@index([lastPlayedAt])
+}
+
+model ThreatScenario {
+  id                   String               @id @default(cuid())
+  externalKey          String               @unique
+  title                String
+  summary              String
+  promptText           String
+  threatType           ThreatType
+  difficultyLevel      DifficultyLevel
+  encounterType        EncounterType        @default(RANDOM_ENCOUNTER)
+  educationalObjective String?
+  narrativeContext     String?
+  recommendedOrder     Int                  @default(0)
+  isActive             Boolean              @default(true)
+  isRepeatable         Boolean              @default(true)
+  cooldownSeconds      Int                  @default(0)
+  requiredFlags        String[]             @default([])
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  choices              ThreatChoice[]
+  attempts             ScenarioAttempt[]
+  saveSlots            SaveSlot[]
+  eventPoolLinks       EventPoolScenario[]
+
+  @@index([threatType, difficultyLevel])
+  @@index([isActive, recommendedOrder])
+}
+
+model ThreatChoice {
+  id                String            @id @default(cuid())
+  scenarioId        String
+  scenario          ThreatScenario    @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  choiceIndex       Int
+  choiceText        String
+  feedbackText      String
+  outcomeText       String
+  isCorrect         Boolean
+  trustTokenDelta   Int               @default(0)
+  cyberStatusDelta  Int               @default(0)
+  setsFlags         String[]          @default([])
+  createdAt         DateTime          @default(now())
+  attempts          ScenarioAttempt[]
+
+  @@unique([scenarioId, choiceIndex])
+}
+
+model EventPool {
+  id            String              @id @default(cuid())
+  name          String              @unique
+  triggerZone   String?
+  encounterType EncounterType       @default(RANDOM_ENCOUNTER)
+  frequency     Decimal             @default(1.0) @db.Decimal(5, 2)
+  isActive      Boolean             @default(true)
+  createdAt     DateTime            @default(now())
+  scenarios     EventPoolScenario[]
+}
+
+model EventPoolScenario {
+  eventPoolId String
+  scenarioId  String
+  weight      Decimal        @default(1.0) @db.Decimal(5, 2)
+  eventPool   EventPool      @relation(fields: [eventPoolId], references: [id], onDelete: Cascade)
+  scenario    ThreatScenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+
+  @@id([eventPoolId, scenarioId])
+}
+
+model ScenarioAttempt {
+  id                String            @id @default(cuid())
+  playerId          String
+  player            Player            @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  saveSlotId        String
+  saveSlot          SaveSlot          @relation(fields: [saveSlotId], references: [id], onDelete: Cascade)
+  scenarioId        String
+  scenario          ThreatScenario    @relation(fields: [scenarioId], references: [id], onDelete: Restrict)
+  selectedChoiceId  String
+  selectedChoice    ThreatChoice      @relation(fields: [selectedChoiceId], references: [id], onDelete: Restrict)
+  outcome           AttemptOutcome
+  wasCorrect        Boolean
+  trustTokenDelta   Int               @default(0)
+  cyberStatusDelta  Int               @default(0)
+  choiceSnapshot    Json
+  createdAt         DateTime          @default(now())
+  trustTokenEntry   TrustTokenLedger?
+  cyberStatusEntry  CyberStatusLedger?
+
+  @@index([playerId, createdAt])
+  @@index([saveSlotId, createdAt])
+}
+
+model TrustTokenLedger {
+  id                String             @id @default(cuid())
+  playerId          String
+  player            Player             @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  saveSlotId        String
+  saveSlot          SaveSlot           @relation(fields: [saveSlotId], references: [id], onDelete: Cascade)
+  scenarioAttemptId String?            @unique
+  scenarioAttempt   ScenarioAttempt?   @relation(fields: [scenarioAttemptId], references: [id], onDelete: SetNull)
+  delta             Int
+  resultingValue    Int
+  reason            LedgerEntryReason
+  metadata          Json?
+  createdAt         DateTime           @default(now())
+
+  @@index([playerId, createdAt])
+  @@index([saveSlotId, createdAt])
+}
+
+model CyberStatusLedger {
+  id                String             @id @default(cuid())
+  playerId          String
+  player            Player             @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  saveSlotId        String
+  saveSlot          SaveSlot           @relation(fields: [saveSlotId], references: [id], onDelete: Cascade)
+  scenarioAttemptId String?            @unique
+  scenarioAttempt   ScenarioAttempt?   @relation(fields: [scenarioAttemptId], references: [id], onDelete: SetNull)
+  delta             Int
+  resultingValue    Int
+  reason            LedgerEntryReason
+  metadata          Json?
+  createdAt         DateTime           @default(now())
+
+  @@index([playerId, createdAt])
+  @@index([saveSlotId, createdAt])
+}
+
+model ProgressSummary {
+  id                  String    @id @default(cuid())
+  playerId            String
+  player              Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  saveSlotId          String    @unique
+  saveSlot            SaveSlot  @relation(fields: [saveSlotId], references: [id], onDelete: Cascade)
+  scenariosCompleted  Int       @default(0)
+  totalAttempts       Int       @default(0)
+  successfulAttempts  Int       @default(0)
+  failedAttempts      Int       @default(0)
+  currentAccuracy     Decimal   @default(0) @db.Decimal(5, 2)
+  updatedAt           DateTime  @updatedAt
+}
+
+model SecurityReport {
+  id                String      @id @default(cuid())
+  playerId          String
+  player            Player      @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  saveSlotId        String
+  saveSlot          SaveSlot    @relation(fields: [saveSlotId], references: [id], onDelete: Cascade)
+  reportType        ReportType
+  summary           String
+  detailedJson      Json
+  strengths         Json
+  improvementAreas  Json
+  finalCyberStatus  Int
+  finalTrustTokens  Int
+  generatedAt       DateTime    @default(now())
+
+  @@index([playerId, generatedAt])
+  @@index([saveSlotId, generatedAt])
+}
+
+model AuditLog {
+  id          String         @id @default(cuid())
+  playerId    String?
+  player      Player?        @relation(fields: [playerId], references: [id], onDelete: SetNull)
+  saveSlotId  String?
+  saveSlot    SaveSlot?      @relation(fields: [saveSlotId], references: [id], onDelete: SetNull)
+  actorRole   AuditActorRole
+  action      String
+  payload     Json?
+  createdAt   DateTime       @default(now())
+
+  @@index([playerId, createdAt])
+  @@index([saveSlotId, createdAt])
+}

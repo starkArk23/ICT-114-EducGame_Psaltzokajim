@@ -1,0 +1,124 @@
+{
+  "flags": [
+    {
+      "name": "email_link_verified",
+      "description": "The player verified the legitimacy of an email link before interacting with it."
+    },
+    {
+      "name": "usb_device_rejected",
+      "description": "The player avoided plugging in an unknown removable device."
+    },
+    {
+      "name": "incident_reported",
+      "description": "The player escalated a suspicious event to the appropriate contact."
+    }
+  ],
+  "eventPools": [
+    {
+      "name": "starter-campus-threats",
+      "triggerZone": "campus",
+      "encounterType": "RANDOM_ENCOUNTER",
+      "frequency": 1,
+      "scenarioKeys": [
+        { "key": "phishing-orientation-email", "weight": 1.5 },
+        { "key": "lost-usb-in-lab", "weight": 1.0 }
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "externalKey": "phishing-orientation-email",
+      "title": "Orientation Email Link",
+      "summary": "A new-student orientation email asks you to confirm your school account through a shortened link.",
+      "promptText": "You receive an email saying your enrollment will be delayed unless you confirm your student credentials immediately.",
+      "threatType": "PHISHING",
+      "difficultyLevel": "BEGINNER",
+      "encounterType": "RANDOM_ENCOUNTER",
+      "educationalObjective": "Recognize urgency tactics and verify links before entering credentials.",
+      "narrativeContext": "The player is exploring campus and checks a mobile inbox.",
+      "recommendedOrder": 1,
+      "isRepeatable": true,
+      "cooldownSeconds": 0,
+      "requiredFlags": [],
+      "choices": [
+        {
+          "choiceIndex": 0,
+          "choiceText": "Open the link and sign in immediately.",
+          "feedbackText": "The message used urgency to pressure you into acting before verifying it.",
+          "outcomeText": "Your credentials are harvested and your cyber status drops.",
+          "isCorrect": false,
+          "trustTokenDelta": -2,
+          "cyberStatusDelta": -15,
+          "setsFlags": []
+        },
+        {
+          "choiceIndex": 1,
+          "choiceText": "Check the sender address and open the school portal manually in a browser.",
+          "feedbackText": "Independent verification is the safest way to handle suspicious login requests.",
+          "outcomeText": "You avoid the phishing attempt and strengthen your trust score.",
+          "isCorrect": true,
+          "trustTokenDelta": 5,
+          "cyberStatusDelta": 10,
+          "setsFlags": ["email_link_verified"]
+        },
+        {
+          "choiceIndex": 2,
+          "choiceText": "Forward the message to classmates and ask if they got it too.",
+          "feedbackText": "Sharing suspicious content can spread the threat and does not verify legitimacy.",
+          "outcomeText": "The threat remains unresolved and confidence in your response drops.",
+          "isCorrect": false,
+          "trustTokenDelta": -1,
+          "cyberStatusDelta": -5,
+          "setsFlags": []
+        }
+      ]
+    },
+    {
+      "externalKey": "lost-usb-in-lab",
+      "title": "Unlabeled USB Drive",
+      "summary": "You find an unlabeled USB drive beside a computer in the campus lab.",
+      "promptText": "The drive might belong to another student, but it could also contain malware or a trap.",
+      "threatType": "MALWARE",
+      "difficultyLevel": "BEGINNER",
+      "encounterType": "ZONE_SPECIFIC",
+      "educationalObjective": "Avoid unknown removable media and report it safely.",
+      "narrativeContext": "The player is in a classroom computer lab.",
+      "recommendedOrder": 2,
+      "isRepeatable": true,
+      "cooldownSeconds": 120,
+      "requiredFlags": [],
+      "choices": [
+        {
+          "choiceIndex": 0,
+          "choiceText": "Plug it into the nearest workstation to identify the owner.",
+          "feedbackText": "Unknown removable devices are a common malware delivery vector.",
+          "outcomeText": "The workstation is compromised and your cyber status falls.",
+          "isCorrect": false,
+          "trustTokenDelta": -3,
+          "cyberStatusDelta": -20,
+          "setsFlags": []
+        },
+        {
+          "choiceIndex": 1,
+          "choiceText": "Turn it in to the lab supervisor without plugging it in.",
+          "feedbackText": "Escalating unknown devices is the correct control action.",
+          "outcomeText": "The device is handled safely and your trust score improves.",
+          "isCorrect": true,
+          "trustTokenDelta": 4,
+          "cyberStatusDelta": 8,
+          "setsFlags": ["usb_device_rejected", "incident_reported"]
+        },
+        {
+          "choiceIndex": 2,
+          "choiceText": "Take it home and check it on your personal laptop.",
+          "feedbackText": "Moving the device to another system still exposes you to risk.",
+          "outcomeText": "You extend the risk to another environment.",
+          "isCorrect": false,
+          "trustTokenDelta": -2,
+          "cyberStatusDelta": -10,
+          "setsFlags": []
+        }
+      ]
+    }
+  ]
+}
