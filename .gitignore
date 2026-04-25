@@ -41,6 +41,7 @@ InitTestScene*.unity*
 *.blend1.meta
 
 # Unity project under frontend/
+/frontend/educgame-unity/Library/
 /frontend/.utmp/
 /frontend/[Ll]ibrary/
 /frontend/[Tt]emp/
